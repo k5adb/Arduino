@@ -123,7 +123,7 @@ int WiFiClient::read() {
 
 
 int WiFiClient::read(uint8_t* buf, size_t size) {
-  if (!ServerDrv::getDataBuf(_sock, buf, &size))
+  if (!ServerDrv::getDataBuf(_sock, buf, reinterpret_cast<uint16_t *>(&size)))
       return -1;
   return 0;
 }

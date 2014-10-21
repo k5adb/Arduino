@@ -38,7 +38,7 @@
 
 #ifdef _DEBUG_
 
-#define INFO(format, args...) do { \
+#define INFO(format, args, ...) do { \
 	char buf[250];	\
 	sprintf(buf, format, args); \
 	Serial.println(buf); \
@@ -57,7 +57,7 @@
 #else
 #define INFO1(x) do {} while(0);
 #define INFO2(x,y) do {} while(0);
-#define INFO(format, args...) do {} while(0);
+#define INFO(format, args, ...) do {} while(0);
 #endif
 
 #if 0

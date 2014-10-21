@@ -17,10 +17,18 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-extern "C" {
+#include "Arduino.h"
+
+#ifndef _WINDOWS_
+  extern "C" {
+    #include "utility/debug.h"
+    #include "utility/wifi_spi.h"
+  }
+#else
   #include "utility/debug.h"
   #include "utility/wifi_spi.h"
-}
+#endif
+
 #include <string.h>
 #include "server_drv.h"
 #include "wifi_drv.h"
@@ -134,8 +142,8 @@ int WiFiUDP::read(unsigned char* buffer, size_t len)
   if (available())
   {
 	  size_t size = 0;
-	  if (!ServerDrv::getDataBuf(_sock, buffer, &size))
-		  return -1;
+      if (!ServerDrv::getDataBuf(_sock, buffer, reinterpret_cast<uint16_t *>(&size)))
+          return -1;
 	  // TODO check if the buffer is too smal respect to buffer size
 	  return size;
   }else{

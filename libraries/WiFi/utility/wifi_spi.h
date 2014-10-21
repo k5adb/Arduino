@@ -20,6 +20,7 @@
 #ifndef WiFi_Spi_h
 #define WiFi_Spi_h
 
+#include "arduino.h"
 #include "wl_definitions.h"
 
 #define CMD_FLAG        0
@@ -113,20 +114,32 @@ enum numParams{
 #define MAX_PARAMS MAX_PARAM_NUMS-1
 #define PARAM_LEN_SIZE 1
 
-typedef struct  __attribute__((__packed__))
+#ifdef _WINDOWS_
+#pragma pack(push, 1)
+#endif
+
+typedef struct tParam
+#ifndef _WINDOWS_
+__attribute__((__packed__))
+#endif
 {
 	uint8_t     paramLen;
 	char*	    param;
 }tParam;
 
-typedef struct  __attribute__((__packed__))
+typedef struct tDataParam
+#ifndef _WINDOWS_
+__attribute__((__packed__))
+#endif
 {
 	uint16_t     dataLen;
 	char*	     data;
 }tDataParam;
 
-
-typedef struct  __attribute__((__packed__))
+typedef struct tSpiMsg
+#ifndef _WINDOWS_
+__attribute__((__packed__))
+#endif
 {
 	unsigned char	cmd;
 	unsigned char	tcmd;
@@ -134,7 +147,10 @@ typedef struct  __attribute__((__packed__))
 	tParam	params[MAX_PARAMS];
 }tSpiMsg;
 
-typedef struct  __attribute__((__packed__))
+typedef struct tSpiMsgData
+#ifndef _WINDOWS_
+__attribute__((__packed__))
+#endif
 {
 	unsigned char	cmd;
 	unsigned char	tcmd;
@@ -143,7 +159,10 @@ typedef struct  __attribute__((__packed__))
 }tSpiMsgData;
 
 
-typedef struct  __attribute__((__packed__))
+typedef struct tSpiHdr
+#ifndef _WINDOWS_
+__attribute__((__packed__))
+#endif
 {
 	unsigned char	cmd;
 	unsigned char	tcmd;
@@ -151,22 +170,35 @@ typedef struct  __attribute__((__packed__))
 	unsigned char	nParam;
 }tSpiHdr;
 
-typedef struct  __attribute__((__packed__))
+typedef struct tLongParam
+#ifndef _WINDOWS_
+__attribute__((__packed__))
+#endif
 {
 	uint8_t     paramLen;
 	uint32_t	param;
 }tLongParam;
 
-typedef struct  __attribute__((__packed__))
+typedef struct tIntParam
+#ifndef _WINDOWS_
+__attribute__((__packed__))
+#endif
 {
 	uint8_t     paramLen;
 	uint16_t	param;
 }tIntParam;
 
-typedef struct  __attribute__((__packed__))
+typedef struct tByteParam
+#ifndef _WINDOWS_
+__attribute__((__packed__))
+#endif
 {
 	uint8_t     paramLen;
 	uint8_t	param;
 }tByteParam;
+
+#ifdef _WINDOWS_
+#pragma pack(pop)
+#endif
 
 #endif
