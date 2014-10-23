@@ -19,18 +19,30 @@
  */
 #include <Arduino.h>
 #include "Sd2Card.h"
+
+#ifdef _WINDOWS_
+#include "spi.h"
+#endif
 //------------------------------------------------------------------------------
 #ifndef SOFTWARE_SPI
 // functions for hardware SPI
 /** Send a byte to the card */
 static void spiSend(uint8_t b) {
+#ifndef _WINDOWS_
   SPDR = b;
   while (!(SPSR & (1 << SPIF)));
+#else
+    SPI.transfer(b);
+#endif
 }
 /** Receive a byte from the card */
 static  uint8_t spiRec(void) {
+#ifndef _WINDOWS_
   spiSend(0XFF);
   return SPDR;
+#else
+    return SPI.transfer(0xFF);
+#endif
 }
 #else  // SOFTWARE_SPI
 //------------------------------------------------------------------------------
@@ -229,9 +241,14 @@ uint8_t Sd2Card::init(uint8_t sckRateID, uint8_t chipSelectPin) {
   pinMode(SS_PIN, OUTPUT);
   digitalWrite(SS_PIN, HIGH); // disable any SPI device using hardware SS pin
   // Enable SPI, Master, clock rate f_osc/128
+#ifndef _WINDOWS_
   SPCR = (1 << SPE) | (1 << MSTR) | (1 << SPR1) | (1 << SPR0);
   // clear double speed
   SPSR &= ~(1 << SPI2X);
+#else
+  SPI.begin();
+  SPI.setClockDivider(SPI_CLOCK_DIV64); // Set clock speed of 256KHz
+#endif
 #endif  // SOFTWARE_SPI
 
   // must supply min of 74 clock cycles with CS high.
@@ -334,7 +351,6 @@ uint8_t Sd2Card::readBlock(uint32_t block, uint8_t* dst) {
  */
 uint8_t Sd2Card::readData(uint32_t block,
         uint16_t offset, uint16_t count, uint8_t* dst) {
-  uint16_t n;
   if (count == 0) return true;
   if ((count + offset) > 512) {
     goto fail;
@@ -354,7 +370,9 @@ uint8_t Sd2Card::readData(uint32_t block,
     inBlock_ = 1;
   }
 
-#ifdef OPTIMIZE_HARDWARE_SPI
+#if defined(OPTIMIZE_HARDWARE_SPI) && !defined(_WINDOWS_)
+  uint16_t n;
+
   // start first spi transfer
   SPDR = 0XFF;
 
@@ -402,7 +420,7 @@ uint8_t Sd2Card::readData(uint32_t block,
 void Sd2Card::readEnd(void) {
   if (inBlock_) {
       // skip data and crc
-#ifdef OPTIMIZE_HARDWARE_SPI
+#if defined(OPTIMIZE_HARDWARE_SPI) && !defined(_WINDOWS_)
     // optimize skip for hardware
     SPDR = 0XFF;
     while (offset_++ < 513) {
@@ -452,6 +470,7 @@ uint8_t Sd2Card::readRegister(uint8_t cmd, void* buf) {
  * false, is returned for an invalid value of \a sckRateID.
  */
 uint8_t Sd2Card::setSckRate(uint8_t sckRateID) {
+#ifndef _WINDOWS_
   if (sckRateID > 6) {
     error(SD_CARD_ERROR_SCK_RATE);
     return false;
@@ -465,6 +484,9 @@ uint8_t Sd2Card::setSckRate(uint8_t sckRateID) {
   SPCR &= ~((1 <<SPR1) | (1 << SPR0));
   SPCR |= (sckRateID & 4 ? (1 << SPR1) : 0)
     | (sckRateID & 2 ? (1 << SPR0) : 0);
+#else
+  SPI.setClockDivider(sckRateID + 1);  // compensate for SPI2X
+#endif
   return true;
 }
 //------------------------------------------------------------------------------
@@ -554,7 +576,7 @@ uint8_t Sd2Card::writeData(const uint8_t* src) {
 //------------------------------------------------------------------------------
 // send one block of data for write block or write multiple blocks
 uint8_t Sd2Card::writeData(uint8_t token, const uint8_t* src) {
-#ifdef OPTIMIZE_HARDWARE_SPI
+#if defined(OPTIMIZE_HARDWARE_SPI) && !defined(_WINDOWS_)
 
   // send data - optimized loop
   SPDR = token;
