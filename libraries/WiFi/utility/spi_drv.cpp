@@ -24,6 +24,9 @@
 extern "C" {
 #include "debug.h"
 }
+#ifdef _WINDOWS_
+#include "spi.h"
+#endif
 
 #define DATAOUT 	11 // MOSI
 #define DATAIN  	12 // MISO
@@ -32,8 +35,13 @@ extern "C" {
 #define SLAVEREADY 	7  // handshake pin
 #define WIFILED 	9  // led on wifi shield
 
-#define DELAY_100NS do { asm volatile("nop"); }while(0);
-#define DELAY_SPI(X) { int ii=0; do {  asm volatile("nop"); }while(++ii<X);}
+#ifndef _WINDOWS_
+  #define DELAY_100NS do { asm volatile("nop"); }while(0);
+  #define DELAY_SPI(X) { int ii=0; do {  asm volatile("nop"); }while(++ii<X);}
+#else
+  #define DELAY_100NS do { __asm nop }while(0);
+  #define DELAY_SPI(X) { int ii=0; do { __asm nop }while(++ii<X);}
+#endif
 #define DELAY_TRANSFER() DELAY_SPI(10)
 
 void SpiDrv::begin()
@@ -61,16 +69,24 @@ void SpiDrv::begin()
 	  INIT_TRIGGER()
 #endif
 
-	  // Warning: if the SS pin ever becomes a LOW INPUT then SPI
+#ifndef _WINDOWS_
+          // Warning: if the SS pin ever becomes a LOW INPUT then SPI
 	  // automatically switches to Slave, so the data direction of
 	  // the SS pin MUST be kept as OUTPUT.
 	  SPCR |= _BV(MSTR);
 	  SPCR |= _BV(SPE);
 	  //SPSR |= _BV(SPI2X);
+#else
+      SPI.begin();
+#endif
 }
 
 void SpiDrv::end() {
-  SPCR &= ~_BV(SPE);
+#ifndef _WINDOWS_
+    SPCR &= ~_BV(SPE);
+#else
+    SPI.end();
+#endif
 }
 
 void SpiDrv::spiSlaveSelect()
@@ -88,14 +104,15 @@ void delaySpi()
 {
 	int i = 0;
 	const int DELAY = 1000;
-	for (;i<DELAY;++i)
+    for (int a = 0; i<DELAY; ++i)
 	{
-		int a =a+1;
+		a =a+1;
 	}
 }
 
 char SpiDrv::spiTransfer(volatile char data)
 {
+#ifndef _WINDOWS_
     SPDR = data;                    // Start the transmission
     while (!(SPSR & (1<<SPIF)))     // Wait the end of the transmission
     {
@@ -104,6 +121,9 @@ char SpiDrv::spiTransfer(volatile char data)
     DELAY_TRANSFER();
 
     return result;                    // return the received byte
+#else
+    return SPI.transfer(data);
+#endif
 }
 
 int SpiDrv::waitSpiChar(unsigned char waitChar)
