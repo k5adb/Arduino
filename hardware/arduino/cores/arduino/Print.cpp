@@ -23,6 +23,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+
+#include <cstdint>
+
 #include "Arduino.h"
 
 #include "Print.h"
@@ -84,7 +87,7 @@ size_t Print::print(unsigned int n, int base)
 size_t Print::print(long n, int base)
 {
   if (base == 0) {
-    return write(n);
+    return write(static_cast<uint8_t>(n));
   } else if (base == 10) {
     if (n < 0) {
       int t = print('-');
@@ -99,7 +102,7 @@ size_t Print::print(long n, int base)
 
 size_t Print::print(unsigned long n, int base)
 {
-  if (base == 0) return write(n);
+  if (base == 0) return write(static_cast<uint8_t>(n));
   else return printNumber(n, base);
 }
 
@@ -211,7 +214,7 @@ size_t Print::printNumber(unsigned long n, uint8_t base) {
   do {
     unsigned long m = n;
     n /= base;
-    char c = m - base * n;
+    char c = static_cast<char>(m - base * n);
     *--str = c < 10 ? c + '0' : c + 'A' - 10;
   } while(n);
 
